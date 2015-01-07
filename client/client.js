@@ -6,5 +6,24 @@ function Client(host, port) {
 }
 
 Client.prototype = {
-  constructor: Client
+  constructor: Client,
+
+  subscribe: function(channel) {
+    var self = this;
+
+    var subscribeMessage = JSON.stringify({
+      "event": "channel-subscribe",
+      "channel_name": channel,
+      "session_id": this.connection.sessionID
+    });
+    
+    var connectionStatus = this.connection.getConnectionState();
+    if(connectionStatus == 'connected') {
+      this.socket.send(subscribeMessage);
+    } else {
+      setTimeout(function() {
+        self.socket.send(subscribeMessage);
+      }, 1000);
+    }
+  }
 }

@@ -6,7 +6,24 @@ function Client(host, port) {
 }
 
 Client.prototype = {
-  constructor: Client
+  constructor: Client,
+
+  subscribe: function(channel) {
+    var self = this;
+    var subscribeMessage = JSON.stringify({
+      "event": "channel-subscribe",
+      "channel_name": channel,
+      "session_id": this.connection.sessionID
+    });
+    var connectionStatus = this.connection.getConnectionState();
+    if(connectionStatus == 'connected') {
+      this.socket.send(subscribeMessage);
+    } else {
+      setTimeout(function() {
+        self.socket.send(subscribeMessage);
+      }, 1000);
+    }
+  }
 }
 
 function ConnectionManager(host, port) {
@@ -15,6 +32,7 @@ function ConnectionManager(host, port) {
   this.tries = 0;
   this.sessionID = Math.floor(Math.random() * 1000000000);
   this.connect(this.host, this.port);
+  this.connectionStatus = '';
  }
 
  ConnectionManager.prototype = {
@@ -29,9 +47,11 @@ function ConnectionManager(host, port) {
     var self = this;
     var connectionUri = "ws://" + host + ":" + port;
     try {
+      this.connectionStatus = 'connecting';
       this.socket = new WebSocket(connectionUri);
 
       this.socket.onopen = function() {
+        this.connectionStatus = 'connected';
         console.log("Socket opened. Session ID: "+self.sessionID);
         self.tries = 0;
       }
@@ -39,6 +59,7 @@ function ConnectionManager(host, port) {
         console.log(msg.data);
       }
       this.socket.onclose = function() {
+        this.connectionStatus = 'closed';
         console.log("Connection closed by host.");
         console.log("Retrying in "+(self.limits.time / 1000)+" seconds.");
 
@@ -51,8 +72,8 @@ function ConnectionManager(host, port) {
         }
       }
       this.socket.onerror = function (error) {
-              console.error("Unidentified WebSocket error.");
-          }
+        console.error("Unidentified WebSocket error.");
+      }
     } catch(e) {
       console.log("Unexpected WebSocket error." +e);
     }
@@ -63,5 +84,9 @@ function ConnectionManager(host, port) {
     setTimeout(function() {
       self.connect(self.host, self.port);
     }, self.limits.time);
-  }
+  },
+
+  getConnectionState: function() {
+    return this.connectionStatus;
+  } 
 }

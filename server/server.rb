@@ -20,7 +20,14 @@ module CloneServer
         }
 
         ws.onmessage do |msg|
-          puts "#{msg}"
+          json_msg = JSON.parse(msg)
+          event = json_msg["event"]
+          session_id = json_msg["session_id"]
+          
+          if event == "channel-subscribe" 
+            channel = json_msg["channel_name"]
+            puts "#{channel}"
+          end
         end
 
         ws.onclose do
