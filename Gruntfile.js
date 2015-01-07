@@ -6,7 +6,7 @@ module.exports = function(grunt) {
         dest: 'client/js/main.js'
       },
     },
-    min: {
+    uglify: {
       js: {
         src: 'client/js/main.js',
         dest: 'client/js/main.min.js'
@@ -15,7 +15,7 @@ module.exports = function(grunt) {
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-cssmin');
-  grunt.registerTask('default', ['concat']);
+  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.registerTask('default', ['concat', 'uglify']);
 };
 

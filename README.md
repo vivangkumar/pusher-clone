@@ -10,6 +10,6 @@ To run:
 ### Dependencies
 
 - Grunt.js
-- Grunt concat and min.
+- Grunt concat and uglify.
 - em-websockets
 - em-hiredis
