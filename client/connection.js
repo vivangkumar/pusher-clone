@@ -1,3 +1,8 @@
+/**
+ * Handle connections and web socket functions.
+ * @param {string} host
+ * @param {integer} port
+ */
 function ConnectionManager(host, port) {
   this.host = host;
   this.port = port;
@@ -10,14 +15,23 @@ function ConnectionManager(host, port) {
  ConnectionManager.prototype = {
   constructor: ConnectionManager,
 
+  /**
+   * Retry limits.
+   */
   limits: {
     time: 5000,
     bound: 5
   },
   
+  /**
+   * Establish websocket connection.
+   * @param {string} host
+   * @param {integer} port
+   */
   connect: function(host, port) {
     var self = this;
     var connectionUri = "ws://" + host + ":" + port;
+
     try {
       this.connectionStatus = 'connecting';
       this.socket = new WebSocket(connectionUri);
@@ -51,6 +65,9 @@ function ConnectionManager(host, port) {
     }
   },
 
+  /**
+   * Retry connection if host fails.
+   */
   retryConnection: function() {
     var self = this;
     setTimeout(function() {
@@ -58,6 +75,9 @@ function ConnectionManager(host, port) {
     }, self.limits.time);
   },
 
+  /**
+   * Get current connection status.
+   */
   getConnectionState: function() {
     return this.connectionStatus;
   } 

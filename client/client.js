@@ -1,3 +1,8 @@
+/**
+ * Instantiates a new socket connection.
+ * @param {string} host
+ * @param {integer} port
+ */
 function Client(host, port) {
   this.host = host;
   this.port = port;
@@ -8,9 +13,14 @@ function Client(host, port) {
 Client.prototype = {
   constructor: Client,
 
+  /**
+   * Subscribe to channel.
+   * @param {string} channel
+   */
   subscribe: function(channel) {
     var self = this;
 
+    // @TODO Refactor into response class
     var subscribeMessage = JSON.stringify({
       "event": "channel-subscribe",
       "channel_name": channel,
