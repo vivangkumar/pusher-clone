@@ -20,13 +20,22 @@ module CloneServer
         }
 
         ws.onmessage do |msg|
+          # Parse JSON message
           json_msg = JSON.parse(msg)
           event = json_msg["event"]
           session_id = json_msg["session_id"]
           
+          # Check for channel subscription event
           if event == "channel-subscribe" 
             channel = json_msg["channel_name"]
-            puts "#{channel}"
+            # Create a new redis connection
+            redis = EM::Hiredis.connect
+            pubsub = redis.pubsub
+
+            # Subsribe to channel using redis pubsub
+            pubsub.subscribe(channel) { |msg| 
+              ws.send(msg)
+            }
           end
         end
 
