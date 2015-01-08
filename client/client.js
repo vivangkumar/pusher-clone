@@ -8,6 +8,7 @@ function Client(host, port) {
   this.port = port;
   this.connection = new ConnectionManager(this.host, this.port);
   this.socket = this.connection.socket;
+  this.channels = new Channels();
 }
 
 Client.prototype = {
@@ -16,24 +17,41 @@ Client.prototype = {
   /**
    * Subscribe to channel.
    * @param {string} channel
+   * @return {object} Channel object
    */
-  subscribe: function(channel) {
+  subscribe: function(channelName) {
     var self = this;
-
-    // @TODO Refactor into response class
-    var subscribeMessage = JSON.stringify({
-      "event": "channel-subscribe",
-      "channel_name": channel,
-      "session_id": this.connection.sessionID
-    });
+    var channel = this.channels.add(channelName, this);
     
-    var connectionStatus = this.connection.getConnectionState();
-    if(connectionStatus == 'connected') {
-      this.socket.send(subscribeMessage);
+    if(this.connection.connectionStatus == 'connected') {
+      channel.subscribe();
     } else {
       setTimeout(function() {
-        self.socket.send(subscribeMessage);
+        channel.subscribe();
       }, 1000);
     }
+
+    return channel;
+  },
+
+  /**
+   * Unsubscribe from a channel.
+   * @param {string} channelName
+   */
+  unsubscribe: function(channelName) {
+    var channel = this.channels.remove(channelName);
+    if(this.connection.connectionStatus == 'connected') {
+      channel.unsubscribe();
+    }
+  },
+
+  /**
+   * Send a new event.
+   * @param {string} eventName
+   * @param {mixed} data
+   * @param {string} channel
+   */
+  sendEvent: function(eventName, data, channel) {
+    return this.connection.sendEvent(eventName, data, channel);
   }
-}
+};

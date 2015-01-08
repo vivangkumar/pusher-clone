@@ -37,7 +37,7 @@ function ConnectionManager(host, port) {
       this.socket = new WebSocket(connectionUri);
 
       this.socket.onopen = function() {
-        this.connectionStatus = 'connected';
+        self.connectionStatus = 'connected';
         console.log("Socket opened. Session ID: "+self.sessionID);
         self.tries = 0;
       }
@@ -45,7 +45,7 @@ function ConnectionManager(host, port) {
         console.log(msg.data);
       }
       this.socket.onclose = function() {
-        this.connectionStatus = 'closed';
+        self.connectionStatus = 'closed';
         console.log("Connection closed by host.");
         console.log("Retrying in "+(self.limits.time / 1000)+" seconds.");
 
@@ -80,5 +80,37 @@ function ConnectionManager(host, port) {
    */
   getConnectionState: function() {
     return this.connectionStatus;
-  } 
-}
+  },
+
+  /**
+   * Send a new event.
+   * @param {string} name
+   * @param {mixed} data
+   * @param {string} channel
+   */
+  sendEvent: function(name, data, channel) {
+    var message = {
+      event: name,
+      data: data
+    };
+
+    if(channel) {
+      message.channel = channel;
+    }
+
+    return this.send(Util.encodeMessage(message));
+  },
+
+  /**
+   * Send data.
+   * @param {mixed} Data.
+   */
+  send: function(data) {
+    if(this.connectionStatus == 'connected') {
+      this.socket.send(data);
+      return true;
+    } else {
+      return false;
+    }
+  }
+};

@@ -1,4 +1,77 @@
 /**
+ * Channel.js
+ *
+ * @author Vivan
+ */
+function Channel(name, client) {
+  this.name = name;
+  this.subscribed = false;
+  this.client = client;
+}
+
+Channel.prototype = {
+  constructor: Channel,
+
+  /**
+   * Subscribe to a channel.
+   */
+  subscribe: function() {
+    this.subscribed = true;
+    this.client.sendEvent('client:subscribe', {
+      channel: this.name
+    });
+  },
+
+  /**
+   * Unsubscribe from a channel
+   */
+  unsubscribe: function() {
+    this.subscribed = false;
+    this.client.sendEvent('client:unsubscribe', {
+      channel: this.name
+    });
+  }
+};
+
+
+/**
+ * Channels.js
+ * @author Vivan
+ */
+
+function Channels() {
+  this.channels = {};
+}
+
+Channels.prototype = {
+  constructor: Channels,
+
+  /**
+   * Add new channel.
+   * @param {string} name
+   * @param {Object} Client
+   * @return {Object} Channel Object
+   */
+  add: function(name, client) {
+    if(!this.channels[name]) {
+      this.channels[name] = new Channel(name, client);
+    }
+    return this.channels[name];
+  },
+
+  /**
+   * Remove a channel from list of channels.
+   * @param {string} name
+   * @return {object} Channel object
+   */
+  remove: function(name) {
+    var channel = this.channels[name];
+    delete this.channels[name];
+
+    return channel;
+  }
+};
+/**
  * Instantiates a new socket connection.
  * @param {string} host
  * @param {integer} port
@@ -8,6 +81,7 @@ function Client(host, port) {
   this.port = port;
   this.connection = new ConnectionManager(this.host, this.port);
   this.socket = this.connection.socket;
+  this.channels = new Channels();
 }
 
 Client.prototype = {
@@ -16,27 +90,44 @@ Client.prototype = {
   /**
    * Subscribe to channel.
    * @param {string} channel
+   * @return {object} Channel object
    */
-  subscribe: function(channel) {
+  subscribe: function(channelName) {
     var self = this;
-
-    // @TODO Refactor into response class
-    var subscribeMessage = JSON.stringify({
-      "event": "channel-subscribe",
-      "channel_name": channel,
-      "session_id": this.connection.sessionID
-    });
+    var channel = this.channels.add(channelName, this);
     
-    var connectionStatus = this.connection.getConnectionState();
-    if(connectionStatus == 'connected') {
-      this.socket.send(subscribeMessage);
+    if(this.connection.connectionStatus == 'connected') {
+      channel.subscribe();
     } else {
       setTimeout(function() {
-        self.socket.send(subscribeMessage);
+        channel.subscribe();
       }, 1000);
     }
+
+    return channel;
+  },
+
+  /**
+   * Unsubscribe from a channel.
+   * @param {string} channelName
+   */
+  unsubscribe: function(channelName) {
+    var channel = this.channels.remove(channelName);
+    if(this.connection.connectionStatus == 'connected') {
+      channel.unsubscribe();
+    }
+  },
+
+  /**
+   * Send a new event.
+   * @param {string} eventName
+   * @param {mixed} data
+   * @param {string} channel
+   */
+  sendEvent: function(eventName, data, channel) {
+    return this.connection.sendEvent(eventName, data, channel);
   }
-}
+};
 
 /**
  * Handle connections and web socket functions.
@@ -77,7 +168,7 @@ function ConnectionManager(host, port) {
       this.socket = new WebSocket(connectionUri);
 
       this.socket.onopen = function() {
-        this.connectionStatus = 'connected';
+        self.connectionStatus = 'connected';
         console.log("Socket opened. Session ID: "+self.sessionID);
         self.tries = 0;
       }
@@ -85,7 +176,7 @@ function ConnectionManager(host, port) {
         console.log(msg.data);
       }
       this.socket.onclose = function() {
-        this.connectionStatus = 'closed';
+        self.connectionStatus = 'closed';
         console.log("Connection closed by host.");
         console.log("Retrying in "+(self.limits.time / 1000)+" seconds.");
 
@@ -120,5 +211,53 @@ function ConnectionManager(host, port) {
    */
   getConnectionState: function() {
     return this.connectionStatus;
-  } 
-}
+  },
+
+  /**
+   * Send a new event.
+   * @param {string} name
+   * @param {mixed} data
+   * @param {string} channel
+   */
+  sendEvent: function(name, data, channel) {
+    var message = {
+      event: name,
+      data: data
+    };
+
+    if(channel) {
+      message.channel = channel;
+    }
+
+    return this.send(Util.encodeMessage(message));
+  },
+
+  /**
+   * Send data.
+   * @param {mixed} Data.
+   */
+  send: function(data) {
+    if(this.connectionStatus == 'connected') {
+      this.socket.send(data);
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+/**
+ * Util.js
+ *
+ * @author Vivan
+ */
+
+ var Util = {};
+
+ /**
+  * Encode messages in JSON.
+  * @param {mixed} message
+  * @return JSON
+  */
+ Util.encodeMessage = function(message) {
+  return JSON.stringify(message);
+ };
