@@ -7,6 +7,8 @@ function Channel(name, client) {
   this.name = name;
   this.subscribed = false;
   this.client = client;
+  this.connection = this.client.connection;
+  this.events = this.connection.events;
 }
 
 Channel.prototype = {
@@ -30,6 +32,14 @@ Channel.prototype = {
     this.client.sendEvent('client:unsubscribe', {
       channel: this.name
     });
+  },
+  /** TODO */
+  bind: function(eventName, callback) {
+    for(var e in this.events) {
+      if(e == eventName) {
+        this.events[e].on(eventName, callback);
+      }
+    }
   }
 };
 
@@ -141,6 +151,7 @@ function ConnectionManager(host, port) {
   this.sessionID = Math.floor(Math.random() * 1000000000);
   this.connect(this.host, this.port);
   this.connectionStatus = '';
+  this.events = {};
  }
 
  ConnectionManager.prototype = {
@@ -173,7 +184,16 @@ function ConnectionManager(host, port) {
         self.tries = 0;
       }
       this.socket.onmessage = function(msg) {
-        console.log(msg.data);
+        msg = msg.data;
+        var jsonData = JSON.parse(msg);
+        var eventName = jsonData.event;
+        var context = jsonData.data;
+        // TODO
+        var emit = new Emit();
+        self.events[eventName] = emit;
+        emit.emit(eventName, context)
+        
+        console.log(jsonData);
       }
       this.socket.onclose = function() {
         self.connectionStatus = 'closed';
@@ -245,6 +265,54 @@ function ConnectionManager(host, port) {
     }
   }
 };
+/**
+ * emit.js
+ * TODO
+ * @author Vivan
+ */
+
+ function Emit() {
+
+ }
+
+ var prototype = Emit.prototype;
+
+ prototype.on = function(name, callback, context) {
+  var emit = this.emit || (this.emit = {});
+  (emit[name] || (emit[name] = [])).push({
+    func: callback,
+    context: context
+  });
+
+  return this;
+ };
+
+ prototype.emit = function(name) {
+  var data = [].slice.call(arguments, 1);
+  var eventArr = ((this.emit || (this.emit = {}))[name] || []).slice();
+  for(var i = 0; i < eventArr.length; i++) {
+    eventArr[i].func.apply(eventArr[i].context, data);
+  }
+
+  return this;
+ };
+
+ prototype.off = function(name, callback) {
+  var emit = this.emit || (this.emit = {});
+  var events = emit[name];
+  var liveEvents = [];
+
+  if(events && callback) {
+    for(var i = 0, len = events.length; i < len; i++) {
+      if(events[i].func !== callback) {
+        liveEvents.push(events[i]);
+      }
+    }
+  }
+  liveEvents.length ? emit[name] = liveEvents : delete emit[name];
+
+  return this;
+ };
 /**
  * Util.js
  *

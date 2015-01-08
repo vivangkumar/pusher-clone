@@ -14,5 +14,10 @@
 <script>
 	var client = new Client('127.0.0.1', 8080);
 	var channel = client.subscribe("test-channel");
+	setTimeout(function(){
+		channel.bind('score_updates', function(data) {
+			console.log(data);
+		});
+	}, 2000);
 </script>
 </html>

@@ -10,6 +10,7 @@ function ConnectionManager(host, port) {
   this.sessionID = Math.floor(Math.random() * 1000000000);
   this.connect(this.host, this.port);
   this.connectionStatus = '';
+  this.events = {};
  }
 
  ConnectionManager.prototype = {
@@ -42,7 +43,16 @@ function ConnectionManager(host, port) {
         self.tries = 0;
       }
       this.socket.onmessage = function(msg) {
-        console.log(msg.data);
+        msg = msg.data;
+        var jsonData = JSON.parse(msg);
+        var eventName = jsonData.event;
+        var context = jsonData.data;
+        // TODO
+        var emit = new Emit();
+        self.events[eventName] = emit;
+        emit.emit(eventName, context)
+        
+        console.log(jsonData);
       }
       this.socket.onclose = function() {
         self.connectionStatus = 'closed';
