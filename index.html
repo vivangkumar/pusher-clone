@@ -15,9 +15,9 @@
 	var client = new Client('127.0.0.1', 8080);
 	var channel = client.subscribe("test-channel");
 	setTimeout(function(){
-		channel.bind('score_updates', function(data) {
-			console.log(data);
+		channel.bind('score_updates', function() {
+			console.log("Called");
 		});
-	}, 2000);
+	}, 5000);
 </script>
 </html>

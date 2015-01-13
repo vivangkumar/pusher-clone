@@ -1,4 +1,67 @@
 /**
+ * activity_emit.js
+ * TODO
+ * @author Vivan
+ */
+
+ function CallbackStore() {
+  this._callbacks = {};
+ }
+
+ CallbackStore.prototype.add = function(eventName, callback, ctx) {
+  this._callbacks[eventName] = this._callbacks[eventName] || [];
+  this._callbacks[eventName].push({
+    func: callback,
+    context: ctx
+  });
+ };
+
+ CallbackStore.prototype.remove = function(eventName, callback, ctx) {
+  if(1 == arguments.length) {
+    delete this._callbacks[eventName];
+    return this;
+  }
+ };
+
+ CallbackStore.prototype.get = function(eventName) {
+  return this._callbacks[eventName];
+ }
+
+ function Emit(ft) {
+  this.callbacks = new CallbackStore();
+  this.ft = ft;
+ }
+
+ var prototype = Emit.prototype;
+
+ prototype.bind = function(eventName, callback, ctx) {
+  this.callbacks.add(eventName, callback, ctx);
+  console.log(eventName, callback, ctx);
+  return this;
+ }
+
+ prototype.unbind = function(eventName, callback, ctx) {
+  this.callbacks.remove(eventName, callback, ctx);
+  return this;
+ }
+
+ prototype.emit = function(eventName, data) {
+  for(var i = 0; i < this.callbacks.length; i++) {
+    this.callbacks[i](eventName, data);
+  }
+
+  var cb = this.callbacks.get(eventName);
+  if(cb && cb.length > 0) {
+    for(var i = 0; i < cb.length; i++) {
+      cb[i].func.call(cb[i].ctx || window, data);
+    }
+  } else if(this.ft) {
+    this.ft(eventName, data);
+  }
+
+  return this;
+ };
+/**
  * Channel.js
  *
  * @author Vivan
@@ -8,7 +71,10 @@ function Channel(name, client) {
   this.subscribed = false;
   this.client = client;
   this.connection = this.client.connection;
-  this.events = this.connection.events;
+  Emit.call(this);
+  Channel.prototype.emit = Emit.prototype.emit;
+  Channel.prototype.bind = Emit.prototype.bind;
+
 }
 
 Channel.prototype = {
@@ -32,14 +98,6 @@ Channel.prototype = {
     this.client.sendEvent('client:unsubscribe', {
       channel: this.name
     });
-  },
-  /** TODO */
-  bind: function(eventName, callback) {
-    for(var e in this.events) {
-      if(e == eventName) {
-        this.events[e].on(eventName, callback);
-      }
-    }
   }
 };
 
@@ -151,7 +209,8 @@ function ConnectionManager(host, port) {
   this.sessionID = Math.floor(Math.random() * 1000000000);
   this.connect(this.host, this.port);
   this.connectionStatus = '';
-  this.events = {};
+  Emit.call(this);
+  ConnectionManager.prototype.emit = Emit.prototype.emit;
  }
 
  ConnectionManager.prototype = {
@@ -187,13 +246,9 @@ function ConnectionManager(host, port) {
         msg = msg.data;
         var jsonData = JSON.parse(msg);
         var eventName = jsonData.event;
-        var context = jsonData.data;
-        // TODO
-        var emit = new Emit();
-        self.events[eventName] = emit;
-        emit.emit(eventName, context)
+        var data = jsonData.data;
         
-        console.log(jsonData);
+        self.emit(eventName, data);
       }
       this.socket.onclose = function() {
         self.connectionStatus = 'closed';
@@ -265,54 +320,6 @@ function ConnectionManager(host, port) {
     }
   }
 };
-/**
- * emit.js
- * TODO
- * @author Vivan
- */
-
- function Emit() {
-
- }
-
- var prototype = Emit.prototype;
-
- prototype.on = function(name, callback, context) {
-  var emit = this.emit || (this.emit = {});
-  (emit[name] || (emit[name] = [])).push({
-    func: callback,
-    context: context
-  });
-
-  return this;
- };
-
- prototype.emit = function(name) {
-  var data = [].slice.call(arguments, 1);
-  var eventArr = ((this.emit || (this.emit = {}))[name] || []).slice();
-  for(var i = 0; i < eventArr.length; i++) {
-    eventArr[i].func.apply(eventArr[i].context, data);
-  }
-
-  return this;
- };
-
- prototype.off = function(name, callback) {
-  var emit = this.emit || (this.emit = {});
-  var events = emit[name];
-  var liveEvents = [];
-
-  if(events && callback) {
-    for(var i = 0, len = events.length; i < len; i++) {
-      if(events[i].func !== callback) {
-        liveEvents.push(events[i]);
-      }
-    }
-  }
-  liveEvents.length ? emit[name] = liveEvents : delete emit[name];
-
-  return this;
- };
 /**
  * Util.js
  *
