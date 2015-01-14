@@ -1,6 +1,9 @@
 module.exports = function(grunt) {
   grunt.initConfig({
     concat: {
+      options: {
+        seperator: ';'
+      },
       js: {
         src: 'client/*.js',
         dest: 'client/js/main.js'

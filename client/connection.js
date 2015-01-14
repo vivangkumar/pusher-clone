@@ -3,34 +3,34 @@
  * @param {string} host
  * @param {integer} port
  */
-function ConnectionManager(host, port) {
-  this.host = host;
-  this.port = port;
-  this.tries = 0;
-  this.sessionID = Math.floor(Math.random() * 1000000000);
-  this.connect(this.host, this.port);
-  this.connectionStatus = '';
-  Emit.call(this);
-  ConnectionManager.prototype.emit = Emit.prototype.emit;
- }
+;(function() {
+    function ConnectionManager(host, port) {
+    this.host = host;
+    this.port = port;
+    this.tries = 0;
+    this.sessionID = Math.floor(Math.random() * 1000000000);
+    this.connect(this.host, this.port);
+    this.connectionStatus = '';
+    PusherClone.Emit.call(this);
+   }
 
- ConnectionManager.prototype = {
-  constructor: ConnectionManager,
+   var prototype = ConnectionManager.prototype;
+   PusherClone.Util.extend(prototype, PusherClone.Emit.prototype);
 
-  /**
-   * Retry limits.
-   */
-  limits: {
+   /**
+    * Retry limits.
+    */
+   prototype.limits = {
     time: 5000,
     bound: 5
-  },
-  
-  /**
-   * Establish websocket connection.
-   * @param {string} host
-   * @param {integer} port
-   */
-  connect: function(host, port) {
+   };
+
+   /**
+    * Establish websocket connection.
+    * @param {string} host
+    * @param {integer} port
+    */
+   prototype.connect = function(host, port) {
     var self = this;
     var connectionUri = "ws://" + host + ":" + port;
 
@@ -43,6 +43,7 @@ function ConnectionManager(host, port) {
         console.log("Socket opened. Session ID: "+self.sessionID);
         self.tries = 0;
       }
+
       this.socket.onmessage = function(msg) {
         msg = msg.data;
         var jsonData = JSON.parse(msg);
@@ -51,6 +52,7 @@ function ConnectionManager(host, port) {
         /** TODO **/
         self.emit(eventName, data);
       }
+
       this.socket.onclose = function() {
         self.connectionStatus = 'closed';
         console.log("Connection closed by host.");
@@ -64,30 +66,24 @@ function ConnectionManager(host, port) {
           console.log("Max retries reached.");
         }
       }
+
       this.socket.onerror = function (error) {
         console.error("Unidentified WebSocket error.");
       }
     } catch(e) {
       console.log("Unexpected WebSocket error." +e);
     }
-  },
+  };
 
   /**
    * Retry connection if host fails.
    */
-  retryConnection: function() {
+  prototype.retryConnection = function() {
     var self = this;
     setTimeout(function() {
       self.connect(self.host, self.port);
     }, self.limits.time);
-  },
-
-  /**
-   * Get current connection status.
-   */
-  getConnectionState: function() {
-    return this.connectionStatus;
-  },
+  };
 
   /**
    * Send a new event.
@@ -95,7 +91,7 @@ function ConnectionManager(host, port) {
    * @param {mixed} data
    * @param {string} channel
    */
-  sendEvent: function(name, data, channel) {
+  prototype.sendEvent = function(name, data, channel) {
     var message = {
       event: name,
       data: data
@@ -105,19 +101,21 @@ function ConnectionManager(host, port) {
       message.channel = channel;
     }
 
-    return this.send(Util.encodeMessage(message));
-  },
+    return this.send(PusherClone.Util.encodeMessage(message));
+  };
 
   /**
    * Send data.
    * @param {mixed} Data.
    */
-  send: function(data) {
+  prototype.send = function(data) {
     if(this.connectionStatus == 'connected') {
       this.socket.send(data);
       return true;
     } else {
       return false;
     }
-  }
-};
+  };
+
+  PusherClone.ConnectionManager = ConnectionManager;
+}).call(this);
