@@ -8,14 +8,21 @@
   var Util = {};
 
   /**
-  * Encode messages in JSON.
-  * @param {mixed} message
-  * @return JSON
-  */
+   * Encode messages in JSON.
+   * @param {mixed} message
+   * @return JSON
+   */
   Util.encodeMessage = function(message) {
     return JSON.stringify(message);
   };
 
+  /**
+   * Extend the prototype of one object with another.
+   * 
+   * @param {object} firstObject
+   * 
+   * @return object
+   */
   Util.extend = function(firstObject) {
     for(var i = 0; i < arguments.length; i++) {
       var ext = arguments[1];

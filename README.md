@@ -4,7 +4,7 @@ Minimalist attempt to recreate the pusher model using Eventmachine and Javascrip
 
 To run:
 - `npm install` to install dependencies.
-- `ruby run.rb`
+- `# ./run`
 - Load index.html while and open javascript console.
 
 ### Dependencies

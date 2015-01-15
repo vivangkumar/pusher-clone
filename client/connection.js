@@ -1,9 +1,9 @@
-/**
- * Handle connections and web socket functions.
- * @param {string} host
- * @param {integer} port
- */
 ;(function() {
+    /**
+     * Handle connections and web socket functions.
+     * @param {string} host
+     * @param {integer} port
+     */
     function ConnectionManager(host, port) {
     this.host = host;
     this.port = port;
@@ -27,6 +27,8 @@
 
    /**
     * Establish websocket connection.
+    * Also has listeners for websocket events.
+    *
     * @param {string} host
     * @param {integer} port
     */
@@ -90,6 +92,8 @@
    * @param {string} name
    * @param {mixed} data
    * @param {string} channel
+   *
+   * @return boolean
    */
   prototype.sendEvent = function(name, data, channel) {
     var message = {
@@ -107,6 +111,8 @@
   /**
    * Send data.
    * @param {mixed} Data.
+   *
+   * @return boolean
    */
   prototype.send = function(data) {
     if(this.connectionStatus == 'connected') {

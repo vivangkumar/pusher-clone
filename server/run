@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require_relative './server.rb'
+
+CloneServer.run_server

@@ -1,9 +1,9 @@
-/**
- * Instantiates a new socket connection.
- * @param {string} host
- * @param {integer} port
- */
 ;(function() {
+  /**
+   * Instantiates a new socket connection.
+   * @param {string} host
+   * @param {integer} port
+   */
   function PusherClone(host, port) {
     this.host = host;
     this.port = port;
@@ -19,7 +19,8 @@
     /**
      * Subscribe to channel.
      * @param {string} channel
-     * @return {object} Channel object
+     *
+     * @return {object} Channel
      */
     subscribe: function(channelName) {
       var self = this;
@@ -53,6 +54,8 @@
      * @param {string} eventName
      * @param {mixed} data
      * @param {string} channel
+     *
+     * @return object
      */
     sendEvent: function(eventName, data, channel) {
       return this.connection.sendEvent(eventName, data, channel);

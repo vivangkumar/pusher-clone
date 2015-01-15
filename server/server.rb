@@ -10,7 +10,8 @@ require_relative 'response.rb'
 
 module CloneServer
 
-  # Run event machine server on port 8080
+  # Main server function.
+  # Runs the server locally on port 8080
   def self.run_server
     EM.run do
       redis = EM::Hiredis.connect
@@ -35,6 +36,11 @@ module CloneServer
     end
   end
 
+  # Handle incoming messages based on events.
+  #
+  # param {json} msg - Incoming message
+  # param {object} redis - Redis connection instance
+  # param {object} ws - Current websocket  
   def self.handle_messages(msg, redis, ws)
     msg = JSON.parse(msg)
     event = msg["event"]
@@ -51,6 +57,12 @@ module CloneServer
     end
   end
 
+  # Subscribe to channels.
+  # Uses the redis pub sub model.
+  #
+  # param {string} channel - Channel to subscribe
+  # param {object} redis - Redis instance
+  # param {object} ws - Current websocket
   def self.subscribe_channel(channel, redis, ws)
     ws.send(CloneResponse.event(
       CloneResponse::SUBSCRIBE_REPLY, {
@@ -62,6 +74,12 @@ module CloneServer
     sub = redis.pubsub.subscribe(channel, callback)
   end
 
+  # Unsubscribe to channels.
+  # Uses the redis pub sub model.
+  #
+  # param {string} channel - Channel to subscribe
+  # param {object} redis - Redis instance
+  # param {object} ws - Current websocket
   def self.unsubscribe_channel(channel, redis, ws)
     ws.send(CloneResponse.event(
       CloneResponse::UNSUBSCRIBE_REPLY, {

@@ -4,6 +4,12 @@
  * @author Vivan
  */
 ;(function() {
+    /**
+     * Channel class.
+     * Describes a single channel.
+     * @param {string} name
+     * @param {object} pusherClone
+     */
     function Channel(name, pusherClone) {
     this.name = name;
     this.subscribed = false;
@@ -15,6 +21,9 @@
   var prototype = Channel.prototype;
   PusherClone.Util.extend(prototype, PusherClone.Emit.prototype);
 
+  /**
+   * Subscribe to a channel.
+   */
   prototype.subscribe = function() {
     this.subscribed = true;
     this.pusherClone.sendEvent('client:subscribe', {
@@ -22,6 +31,9 @@
     });
   };
 
+  /**
+   * Unsubscribe from a channel
+   */
   prototype.unsubscribe = function() {
     this.subscribed = false;
     this.pusherClone.sendEvent('client:unsubscribe', {
